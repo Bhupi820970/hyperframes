@@ -2,6 +2,11 @@ name: Render HyperFrames Short
 
 on:
   workflow_dispatch:
+    inputs:
+      note:
+        description: 'Optional note'
+        required: false
+        default: 'viral short'
 
 jobs:
   render:
