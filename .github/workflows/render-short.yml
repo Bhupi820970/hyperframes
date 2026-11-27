@@ -1,0 +1,66 @@
+name: Render HyperFrames Short
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Duration in seconds'
+        required: false
+        default: '15'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install HyperFrames CLI
+        run: npm install -g hyperframes
+
+      - name: Create sample short project
+        run: |
+          npx hyperframes init viral-short --non-interactive || true
+          cd viral-short || mkdir -p viral-short && cd viral-short
+          cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin:0; background:#000; color:#0f0; font-family:Arial,sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; }
+    h1 { font-size:80px; text-align:center; animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { transform:scale(1.05); } }
+  </style>
+</head>
+<body>
+  <section class="clip" data-start="0" data-duration="15">
+    <h1>THIS ONE MOVE<br>$2.4M IN 48H</h1>
+  </section>
+</body>
+</html>
+EOF
+
+      - name: Render video
+        run: |
+          cd viral-short || cd .
+          npx hyperframes render --output ../viral-short.mp4 --resolution portrait || npx hyperframes render --output viral-short.mp4
+
+      - name: Upload MP4 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: viral-short-mp4
+          path: |
+            viral-short.mp4
+            viral-short/viral-short.mp4
+            renders/*.mp4
+          if-no-files-found: warn
